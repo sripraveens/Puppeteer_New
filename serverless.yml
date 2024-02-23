@@ -1,0 +1,42 @@
+service: take-screenshots-sparticuz
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-southeast-1
+  memorySize: 3000
+  timeout: 30
+  logRetentionInDays: 60
+  stackTags:
+    Project: puppeteer-bot-sparticuz
+    Dev: Sri Praveen
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "logs:*"
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+        - lambda:InvokeFunction
+        - events:PutRule
+        - events:PutTargets
+        - s3:*
+      Resource: "*"
+    - Effect: Allow
+      Action:
+        - sqs:*
+      Resource: "*"
+  deploymentBucket:
+    name: cp-development-bucket
+  environment:
+    S3URL: ${ssm:S3URL}
+    S3BUCKET: ${ssm:S3BUCKET}
+
+functions:
+  takeScreenshotNew:
+    handler: ./index.handler
+    events:
+      - http:
+          path: /postUrlForScreenshots
+          method: post

@@ -13,11 +13,6 @@ async function scrape(url) {
   try {
     puppeteerExtra.use(StealthPlugin());
 
-    // const browser = await puppeteerExtra.launch({
-    //   headless: "new",
-    //   executablePath:
-    //     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    // });
     const browser = await puppeteerExtra.launch({
       args: chromium.args,
       defaultViewport: chromium.defaultViewport,
@@ -58,12 +53,13 @@ async function scrape(url) {
     console.log(link);
     return link;
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    console.error(error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error" }),
     };
   }
+  // This makes the lamda to timeout sometimes, weird, but anyway after the lamda closes, everything gets shut down automatically, so shouln't be an issue
   //   finally {
   //     console.log("Finally ran");
   //     const pages = await browser.pages();

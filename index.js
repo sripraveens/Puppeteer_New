@@ -29,12 +29,41 @@ async function scrape(url) {
         waitUntil: "networkidle2",
       }
     );
-    await page.waitForSelector("canvas");
 
-    await page.evaluate(() => {
-      const canvas = document.querySelector("canvas");
-      canvas.style.left = "-200px";
-    });
+    await page.waitForSelector("canvas", { visible: true });
+    // await page.evaluate(() => {
+    //   const canvas = document.querySelector("canvas");
+    //   if (canvas) {
+    //     canvas.style.left = "-200px";
+    //   }
+    // });
+    const chartArea = await page.$(".chart-markup-table.pane");
+    if (chartArea) {
+      const boundingBox = await chartArea.boundingBox();
+      if (boundingBox) {
+        // Move mouse to the center of the chart area
+        await page.mouse.move(
+          boundingBox.x + boundingBox.width / 2,
+          boundingBox.y + boundingBox.height / 2
+        );
+        // Click and hold the mouse button
+        await page.mouse.down();
+        // Drag the mouse left by 200 pixels
+        await page.mouse.move(
+          boundingBox.x + boundingBox.width / 2 - 200,
+          boundingBox.y + boundingBox.height / 2,
+          { steps: 10 }
+        );
+        // Release the mouse button
+        await page.mouse.up();
+      }
+    }
+    const button = await page.$(
+      'button[aria-label="Watchlist, details and news"]'
+    );
+    if (button) {
+      await button.click();
+    }
 
     const buffer = await page.screenshot();
     console.log("S3 step below");

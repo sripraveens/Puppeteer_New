@@ -35,8 +35,15 @@ provider:
 
 functions:
   takeScreenshotNew:
-    handler: ./index.handler
+    handler: ./screenShotV1.handler
+    memorySize: 10240
     events:
       - http:
           path: /postUrlForScreenshots
+          method: post
+  takeScreenshotTest:
+    handler: ./screenshotService.handler
+    events:
+      - http:
+          path: /postUrlForScreenshotsTest
           method: post

@@ -88,13 +88,6 @@ async function scrape(url) {
       body: JSON.stringify({ error: "Internal Server Error" }),
     };
   }
-  // This makes the lamda to timeout sometimes, weird, but anyway after the lamda closes, everything gets shut down automatically, so shouln't be an issue
-  //   finally {
-  //     console.log("Finally ran");
-  //     const pages = await browser.pages();
-  //     await Promise.all(pages.map(async (page) => page.close()));
-  //     await browser.close();
-  //   }
 }
 
 exports.handler = async (event) => {
@@ -102,7 +95,7 @@ exports.handler = async (event) => {
     console.log(event);
     const body = JSON.parse(event.body);
     const { url } = body;
-    console.log("URL Befoer func Call", url);
+    console.log("URL Before func Call", url);
     const data = await scrape(url);
     console.log("Data", data);
     return {

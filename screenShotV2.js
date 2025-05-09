@@ -7,8 +7,8 @@ AWS.config.update({ region: "ap-southeast-1" });
 
 const s3 = new AWS.S3();
 
-let browser = null;
 async function initializeBrowser() {
+  let browser = null;
   if (!browser || !browser.isConnected()) {
     puppeteerExtra.use(StealthPlugin());
     console.time("Browser Launch Time");
@@ -39,47 +39,16 @@ async function scrape(url) {
 
     console.time("Page Navigation");
     await page.goto(url, {
-      waitUntil: "domcontentloaded",
+      waitUntil: "networkidle2",
     });
     console.timeEnd("Page Navigation");
-
-    console.time("Canvas Wait");
-    const p1 = page.waitForSelector("canvas", { visible: true });
-    console.timeEnd("Canvas Wait");
-
-    const chartArea = await page.$(".chart-markup-table.pane");
-    if (chartArea) {
-      console.time("BoundingBox Calculation");
-      const boundingBox = await chartArea.boundingBox();
-      console.timeEnd("BoundingBox Calculation");
-      if (boundingBox) {
-        console.time("Mouse Interaction");
-        await page.mouse.move(
-          boundingBox.x + boundingBox.width / 2,
-          boundingBox.y + boundingBox.height / 2
-        );
-        await page.mouse.down();
-        await page.mouse.move(
-          boundingBox.x + boundingBox.width / 2 - 100,
-          boundingBox.y + boundingBox.height / 2,
-          { steps: 8 }
-        );
-        await page.mouse.up();
-        console.timeEnd("Mouse Interaction");
-      }
-    } else {
-      throw new Error("Chart area not found");
-    }
-
-    const button = await page.$(
-      'button[aria-label="Watchlist, details and news"]'
-    );
-    if (button) {
-      console.time("Button Click");
-      await button.click();
-      console.timeEnd("Button Click");
-    }
-    await p1;
+    console.time("View Port");
+    await page.setViewport({
+      width: 1920,
+      height: 1080,
+      deviceScaleFactor: 2, // optional for sharper images
+    });
+    console.timeEnd("View Port");
     console.time("Screenshot Capture");
     let buffer = await page.screenshot();
     console.timeEnd("Screenshot Capture");
@@ -99,7 +68,6 @@ async function scrape(url) {
     console.log(link);
 
     console.time("Page Close");
-
     try {
       const pages = await browser.pages();
       let page;
@@ -108,56 +76,18 @@ async function scrape(url) {
 
       for (let i = 0; i < pages.length; i++) {
         page = pages[i];
-
-        if (page.crawler_cdp_client)
-          page.crawler_cdp_client.off("Network.requestIntercepted");
-
-        page.off("request");
-        page.off("response");
-        page.off("framenavigated");
-
-        await page.goto("about:blank");
         await page.close();
       }
     } catch (e) {
       console.error("Unexpected error when closing page:", e);
     }
-
-    if (browser) {
-      try {
-        browser.off("disconnected");
-
-        // Give the browser 5 seconds to shut down
-        await timeout(
-          browser.close().catch((e) => {
-            console.error("Error closing browser:", e);
-          }),
-          5000
-        ).catch(async () => monitorBrowserStop(browser));
-      } catch (e) {
-        console.error("Unexpected error when closing browser:", e);
-      }
-    }
-
     //await page.close(); // Ensure the page is closed properly
     console.timeEnd("Page Close");
 
-    // buffer = null;
-    // await browser.close();
-    // browser = null;
-    console.log("Browser closed");
     return link;
   } catch (error) {
     console.error("Error during scraping:", error);
 
-    // Close and reset browser if an error occurs
-    // if (browser && browser.isConnected()) {
-    //   console.time("Browser Close");
-    //   await browser.close();
-    //   browser = null;
-    //   console.timeEnd("Browser Close");
-    //   browser = null; // Reset the browser instance
-    // }
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error" }),
@@ -168,13 +98,13 @@ async function scrape(url) {
 exports.handler = async (event) => {
   try {
     console.log(event);
-    const body = JSON.parse(event.body);
+    const body = event.body ? JSON.parse(event.body) : {};
     const { url } = body;
     console.log("URL Before func Call", url);
     console.time("Total Scrape Time");
     const data = await scrape(
       url ||
-        "https://www.tradingview.com/chart/9CtBCUjA/?symbol=BINANCE%3ABTCUSDT&interval=1H"
+        "https://coingpt-chart.s3.ap-southeast-1.amazonaws.com/chartWidget.html?symbol=BINANCE:BTCUSDT&interval=60"
     );
     console.timeEnd("Total Scrape Time");
 

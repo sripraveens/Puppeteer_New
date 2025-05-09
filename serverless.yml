@@ -34,16 +34,17 @@ provider:
     S3BUCKET: ${ssm:S3BUCKET}
 
 functions:
-  takeScreenshotNew:
+  takeScreenshotV1:
     handler: ./screenShotV1.handler
     memorySize: 10240
     events:
       - http:
           path: /postUrlForScreenshots
           method: post
-  takeScreenshotTest:
-    handler: ./screenshotService.handler
+  takeScreenshotV2:
+    handler: ./screenShotV2.handler
+    memorySize: 10240
     events:
       - http:
-          path: /postUrlForScreenshotsTest
+          path: /postUrlForScreenshotsV2
           method: post

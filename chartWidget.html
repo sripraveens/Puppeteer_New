@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TradingView Chart</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+      }
+      .tradingview-widget-container {
+        height: 1920px;
+        width: 1080px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tradingview-widget-container">
+      <div id="tv_chart_container"></div>
+      <div class="tradingview-widget-copyright">
+        <a
+          href="https://www.tradingview.com/"
+          rel="noopener nofollow"
+          target="_blank"
+        >
+          <span class="blue-text">Track all markets on TradingView</span>
+        </a>
+      </div>
+    </div>
+
+    <script>
+      function getParam(key, defaultValue) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(key) || defaultValue;
+      }
+
+      const symbol = getParam("symbol", "BINANCE:BTCUSDT");
+      const interval = getParam("interval", "60");
+      let studies = [];
+      switch (interval) {
+        case "1":
+        case "3":
+        case "5":
+          studies = ["STD;Stochastic_RSI", "STD;Donchian_Channels"];
+          break;
+        case "15":
+          studies = ["STD;MA%Ribbon", "STD;RSI", "STD;Linear_Regression"];
+          break;
+        case "60":
+        case "120":
+          studies = ["STD;RSI", "STD;Supertrend"];
+          break;
+        case "240":
+        case "D":
+          studies = ["STD;MA%Ribbon", "STD;RSI"];
+          break;
+        default:
+          studies = ["STD;MA%Ribbon", "STD;RSI", "Volume@tv-basicstudies"];
+          break;
+      }
+
+      const config = {
+        width: "1920",
+        height: "1080",
+        autosize: false,
+        symbol: symbol,
+        interval: interval,
+        timezone: "Etc/UTC",
+        theme: "dark",
+        style: "1",
+        locale: "en",
+        allow_symbol_change: true,
+        hide_side_toolbar: false,
+        gridColor: "rgba(0, 0, 0, 0.06)",
+        hide_volume: true,
+        support_host: "https://www.tradingview.com",
+        studies: studies,
+      };
+
+      const script = document.createElement("script");
+      script.src =
+        "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
+      script.async = true;
+      script.innerHTML = JSON.stringify(config);
+      document.getElementById("tv_chart_container").appendChild(script);
+    </script>
+  </body>
+</html>

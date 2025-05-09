@@ -43,6 +43,17 @@ async function scrape(url) {
     });
     console.timeEnd("Page Navigation");
 
+    try {
+      console.time("Popup Handling");
+      const closeButtonSelector = ".tv-dialog__close"; // Update with the close button selector
+      await page.waitForSelector(closeButtonSelector, { timeout: 3000 }); // Wait for the popup
+      await page.click(closeButtonSelector); // Close the popup
+      console.log("Popup closed successfully");
+      console.timeEnd("Popup Handling");
+    } catch (e) {
+      console.log("Popup not detected, continuing...");
+    }
+
     console.time("Canvas Wait");
     const p1 = page.waitForSelector("canvas", { visible: true });
     console.timeEnd("Canvas Wait");

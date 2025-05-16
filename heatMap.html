@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TradingView Heatmap</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+      }
+      .tradingview-widget-container {
+        height: 1920px;
+        width: 1080px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tradingview-widget-container">
+      <div id="tv_heatmap_container"></div>
+      <div class="tradingview-widget-copyright">
+        <a
+          href="https://www.tradingview.com/"
+          rel="noopener nofollow"
+          target="_blank"
+        >
+          <span class="blue-text">Track all markets on TradingView</span>
+        </a>
+      </div>
+    </div>
+
+    <script>
+      function getParam(key, defaultValue) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(key) || defaultValue;
+      }
+
+      const blockColor = getParam("blockColor", "24h_close_change|5");
+      const config = {
+        dataSource: "Crypto",
+        blockSize: "market_cap_calc",
+        blockColor: blockColor,
+        locale: "en",
+        symbolUrl: "",
+        colorTheme: "dark",
+        hasTopBar: true,
+        isDataSetEnabled: true,
+        isZoomEnabled: true,
+        hasSymbolTooltip: true,
+        isMonoSize: false,
+        width: "1920",
+        height: "1080",
+      };
+
+      const script = document.createElement("script");
+      script.src =
+        "https://s3.tradingview.com/external-embedding/embed-widget-crypto-coins-heatmap.js";
+      script.async = true;
+      script.innerHTML = JSON.stringify(config);
+      document.getElementById("tv_heatmap_container").appendChild(script);
+    </script>
+  </body>
+</html>

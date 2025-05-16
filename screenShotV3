@@ -4,13 +4,17 @@ const chromium = require("@sparticuz/chromium");
 const AWS = require("aws-sdk");
 
 AWS.config.update({ region: "ap-southeast-1" });
-
 const s3 = new AWS.S3();
+
+puppeteerExtra.use(StealthPlugin());
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function initializeBrowser() {
   let browser = null;
   if (!browser || !browser.isConnected()) {
-    puppeteerExtra.use(StealthPlugin());
     console.time("Browser Launch Time");
     browser = await puppeteerExtra.launch({
       args: chromium.args,
@@ -28,33 +32,44 @@ async function scrape(url) {
   console.log("URL", url);
   let result = null;
   let link = null;
+
   try {
     console.time("Browser Initialization");
     const browser = await initializeBrowser();
     console.timeEnd("Browser Initialization");
 
     console.time("Page Creation");
-    let page = await browser.newPage();
+    const page = await browser.newPage();
     console.timeEnd("Page Creation");
+
     console.time("View Port");
     await page.setViewport({
       width: 1920,
       height: 1080,
-      deviceScaleFactor: 2, // optional for sharper images
+      deviceScaleFactor: 2,
     });
     console.timeEnd("View Port");
+
     console.time("Page Navigation");
-    await page.goto(url, {
-      waitUntil: "networkidle2",
-    });
+    await page.goto(url, { waitUntil: "networkidle2" });
     console.timeEnd("Page Navigation");
+
+    // 🎯 Wait for heatmap % labels to confirm visual readiness
+    const iframeElement = await page.$("#tv_heatmap_container iframe");
+    const iframe = await iframeElement.contentFrame();
+    await iframe.waitForSelector('span[class^="svgTextWrap-"]', {
+      timeout: 7000,
+    });
+    await sleep(1000);
+    console.log("✅ Heatmap labels detected, proceeding to screenshot...");
+
     console.time("Screenshot Capture");
-    let buffer = await page.screenshot();
+    const buffer = await page.screenshot();
     console.timeEnd("Screenshot Capture");
 
     console.time("S3 Upload");
     const params = {
-      Bucket: `${process.env.S3BUCKET}`,
+      Bucket: process.env.S3BUCKET,
       Key: `${Date.now()}.png`,
       Body: buffer,
       ContentType: "image/png",
@@ -64,29 +79,18 @@ async function scrape(url) {
     link = `${process.env.S3URL}${params.Key}`;
     console.timeEnd("S3 Upload");
 
-    console.log(link);
+    console.log("✅ Screenshot URL:", link);
 
     console.time("Page Close");
-    try {
-      const pages = await browser.pages();
-      let page;
-
-      console.log("Pages open:", pages.length);
-
-      for (let i = 0; i < pages.length; i++) {
-        page = pages[i];
-        await page.close();
-      }
-    } catch (e) {
-      console.error("Unexpected error when closing page:", e);
+    const pages = await browser.pages();
+    for (const p of pages) {
+      await p.close();
     }
-    //await page.close(); // Ensure the page is closed properly
     console.timeEnd("Page Close");
 
     return link;
   } catch (error) {
-    console.error("Error during scraping:", error);
-
+    console.error("❌ Error during scraping:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error" }),
@@ -96,24 +100,27 @@ async function scrape(url) {
 
 exports.handler = async (event) => {
   try {
-    console.log(event);
+    console.log("📦 Event received:", event);
     const body = event.body ? JSON.parse(event.body) : {};
     const { url } = body;
-    console.log("URL Before func Call", url);
+
+    if (!url) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ error: "Missing URL" }),
+      };
+    }
+
     console.time("Total Scrape Time");
-    const data = await scrape(
-      url ||
-        "https://coingpt-chart.s3.ap-southeast-1.amazonaws.com/chartWidget.html?symbol=BINANCE:BTCUSDT&interval=60"
-    );
+    const data = await scrape(url);
     console.timeEnd("Total Scrape Time");
 
-    console.log("Data", data);
     return {
       statusCode: 200,
       body: JSON.stringify({ data }),
     };
   } catch (error) {
-    console.error("Handler Error:", error);
+    console.error("❌ Handler Error:", error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal Server Error" }),

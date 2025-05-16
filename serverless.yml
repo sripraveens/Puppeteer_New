@@ -48,3 +48,10 @@ functions:
       - http:
           path: /postUrlForScreenshotsV2
           method: post
+  takeScreenshotV3:
+    handler: ./screenShotV3.handler
+    memorySize: 10240
+    events:
+      - http:
+          path: /postUrlForScreenshotsV3
+          method: post

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TradingView Crypto Screener</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #000;
+      }
+      .tradingview-widget-container {
+        height: 1920px;
+        width: 1080px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tradingview-widget-container">
+      <div id="tv_screener_container"></div>
+      <div class="tradingview-widget-copyright">
+        <a
+          href="https://www.tradingview.com/"
+          rel="noopener nofollow"
+          target="_blank"
+        >
+          <span class="blue-text">Track all markets on TradingView</span>
+        </a>
+      </div>
+    </div>
+
+    <script>
+      function getParam(key, defaultValue) {
+        const params = new URLSearchParams(window.location.search);
+        return params.get(key) || defaultValue;
+      }
+
+      const defaultColumn = getParam("column", "overview");
+
+      const config = {
+        width: "1920",
+        height: "1080",
+        defaultColumn: defaultColumn,
+        screener_type: "crypto_mkt",
+        displayCurrency: "USD",
+        colorTheme: "dark",
+        locale: "en",
+      };
+
+      const script = document.createElement("script");
+      script.src =
+        "https://s3.tradingview.com/external-embedding/embed-widget-screener.js";
+      script.async = true;
+      script.innerHTML = JSON.stringify(config);
+      document.getElementById("tv_screener_container").appendChild(script);
+    </script>
+  </body>
+</html>
